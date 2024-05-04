@@ -1,0 +1,16 @@
+[
+  {
+    "name" : "La ciudad y los perros",
+    "review" : "'La ciudad y los perros' es una novela escrita por el autor peruano Mario Vargas Llosa, publicada en 1963. La historia se desarrolla en el colegio militar Leoncio Prado en Lima, Perú, y sigue la vida de un grupo de jóvenes cadetes que enfrentan la dura realidad de la vida militar y la corrupción en la sociedad.",
+    "author" : { "idAuthor" : 1},
+    "urlCover" : "https://blogs.uoregon.edu/lcylp/files/2015/06/LCYLP_BBB-1f9w15d.jpg",
+    "enabled" : true
+  },
+  {
+    "name" : "Harry Potter y la piedra filosofal",
+    "review" : "El día de su cumpleaños, Harry Potter descubre que es hijo de dos conocidos hechiceros, de los que ha heredado poderes mágicos. Debe asistir a una famosa escuela de magia y hechicería, donde entabla una amistad con dos jóvenes que se convertirán en sus compañeros de aventura.",
+    "author" : { "idAuthor" : 2},
+    "urlCover" : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQWZZo_1tSrblWiD7qh9ac0dwjJy8glZAmEwJ56ozI0tA&s",
+    "enabled" : true
+  }
+]
