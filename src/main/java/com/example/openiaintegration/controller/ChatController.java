@@ -96,14 +96,6 @@ public class ChatController {
 
         chatHistory.addMessage("1", new ChatMessage(MessageType.USER, message));
 
-        //List<Message> listMessages = new ArrayList<>();
-        //ChatMessage chatMessage1 = new ChatMessage(MessageType.USER, "hablemos de pokemon");
-        //ChatMessage chatMessage2 = new ChatMessage(MessageType.USER, message);
-
-        //listMessages.add(chatMessage1);
-        //listMessages.add(chatMessage2);
-
-        //ChatResponse chatResponse = chatClient.call(new Prompt(listMessages));
         ChatResponse chatResponse = chatClient.call(new Prompt(chatHistory.getAll("1")));
         String result = chatResponse.getResult().getOutput().getContent();
 
