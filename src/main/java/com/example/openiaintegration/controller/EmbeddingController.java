@@ -43,8 +43,6 @@ public class EmbeddingController {
 
         vectorStore.add(documents);
 
-        List<Document> results = vectorStore.similaritySearch(SearchRequest.query(message).withTopK(1));
-
-        return results;
+        return vectorStore.similaritySearch(SearchRequest.query(message).withTopK(1));
     }
 }

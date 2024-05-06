@@ -1,0 +1,16 @@
+<app-spinner></app-spinner>
+
+<mat-toolbar color="primary">
+    <span>BookAI</span>
+    <span class="spacer"></span>
+    <button mat-button routerLink="/books">Books</button>
+    <button mat-button routerLink="/authors">Authors</button>
+</mat-toolbar>
+
+<button mat-fab class="chat-button" (click)="toggleChat()">Toggle Chat</button>
+
+@if (showChat) {
+    <app-chat></app-chat>
+}@else {
+    <router-outlet />
+}

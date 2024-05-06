@@ -1,0 +1,22 @@
+.example-container {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .example-container>* {
+    width: 100%;
+  }
+  
+  .audio-visualizer {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    height: 200px;
+  }
+  
+  .peak-bar {
+    width: 4px;
+    background-color: #007bff;
+    /* Color de los picos de audio */
+    margin: 0 1px;
+  }

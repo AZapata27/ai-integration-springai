@@ -1,0 +1,70 @@
+<mat-dialog-content>
+    <mat-toolbar>
+        <span>Book Info</span>
+    </mat-toolbar>
+
+    <form [formGroup]="form" (submit)="operate()">
+        <div class="example-container">
+
+            <div [hidden]="true">
+                <mat-form-field>
+                    <mat-label>ID Book</mat-label>
+                    <input matInput formControlName="idBook">
+                </mat-form-field>
+            </div>
+
+            <mat-form-field>
+                <mat-label>Book Name</mat-label>
+                <input matInput formControlName="name">
+            </mat-form-field>
+
+            <mat-form-field>
+                <mat-label>Review</mat-label>
+                <textarea matInput formControlName="review" cdkTextareaAutosize #autosize="cdkTextareaAutosize"
+                    cdkAutosizeMinRows="3" cdkAutosizeMaxRows="5"></textarea>
+            </mat-form-field>
+
+            <button mat-raised-button color="primary" type="button" (click)="suggestReview()"><mat-icon>description</mat-icon>Suggest Review</button>
+            <button mat-raised-button color="accent" type="button" (click)="startRecording()"><mat-icon>fiber_manual_record</mat-icon> Start Recording</button>
+            
+            @if (isRecording) {
+            <div class="audio-visualizer">
+                <!-- Aquí se mostrará la animación de los picos de audio -->
+                @for (barHeight of peakBars; track $index) {
+                    <div class="peak-bar" [style.height.px]="barHeight"></div>
+                }
+              </div>
+            }
+            <button mat-raised-button color="accent" type="button" (click)="stopRecording()" [disabled]="!isRecording"><mat-icon>stop</mat-icon> Stop Recording</button>
+            <button mat-raised-button color="accent" type="button" (click)="uploadRecording()" [disabled]="!isRecording"><mat-icon>file_upload</mat-icon> Upload Recording</button>
+
+            <mat-form-field>
+                <mat-label>Author</mat-label>
+                <mat-select formControlName="author">
+                    @for (author of authors; track author) {
+                    <mat-option [value]="author">{{author.firstName}} {{author.lastName}}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+
+            <mat-form-field>
+                <mat-label>Cover</mat-label>
+                <input matInput formControlName="urlCover">
+            </mat-form-field>
+
+            <button mat-raised-button color="primary" type="button" (click)="suggestCover()"><mat-icon>insert_photo</mat-icon> Suggest Cover</button>
+
+            @if(form.value['urlCover']){
+            <img [src]="form.value['urlCover']" alt="Book Cover">
+            }
+
+            <section class="example-section">
+                <mat-checkbox formControlName="enabled">Enabled</mat-checkbox>
+            </section>
+
+            <button mat-raised-button color="primary" type="submit"> <mat-icon>done</mat-icon> Done</button>
+            <button mat-raised-button color="accent" type="button" (click)="closeDialog()"><mat-icon>cancel</mat-icon> Cancel</button>
+        </div>
+    </form>
+
+</mat-dialog-content>

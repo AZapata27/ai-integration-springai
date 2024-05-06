@@ -1,6 +1,6 @@
 package com.example.openiaintegration.controller;
 
-import com.mitocode.dto.ResponseDTO;
+import com.example.openiaintegration.dto.ResponseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.image.ImageClient;
 import org.springframework.ai.image.ImagePrompt;
