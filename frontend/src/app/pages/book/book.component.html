@@ -1,0 +1,22 @@
+<mat-toolbar>Books</mat-toolbar>
+
+<button mat-raised-button color="primary" (click)="openDialog()">New Book</button>
+
+<div class="card-grid">
+    @for (book of books; track $index) {
+    <mat-card class="example-card">
+        <mat-card-header>
+            <img mat-card-avatar [src]="book.author.urlPhoto">
+            <mat-card-title>{{book.name}}</mat-card-title>
+            <mat-card-subtitle>{{book.author.firstName}} {{book.author.lastName}}</mat-card-subtitle>
+        </mat-card-header>
+        <img mat-card-image [src]="book.urlCover" alt="Photo of cover book">
+        <mat-card-content>
+            <p>
+                {{book.review}}
+            </p>
+        </mat-card-content>
+
+    </mat-card>
+    }
+</div>

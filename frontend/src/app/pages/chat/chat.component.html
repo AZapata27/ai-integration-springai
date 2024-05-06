@@ -1,0 +1,14 @@
+<div class="chat-container">
+    <div class="chat-messages">
+      @for (message of messages; track $index) {
+      <div class="message"
+        [ngClass]="{'user-message': message.sender === 'user', 'bot-message': message.sender === 'bot'}">
+        {{ message.text }}
+      </div>
+      }
+    </div>
+    <div class="chat-input">
+      <textarea [(ngModel)]="newMessage" placeholder="Type your message..."></textarea>
+      <button (click)="sendMessage()">Send</button>
+    </div>
+  </div>

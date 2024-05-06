@@ -1,0 +1,7 @@
+.chat-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 999; /* Para asegurarse de que esté encima de todo */
+  }
+  
