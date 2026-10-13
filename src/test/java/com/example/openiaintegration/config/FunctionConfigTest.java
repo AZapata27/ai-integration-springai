@@ -6,6 +6,8 @@ import com.example.openiaintegration.service.impl.MockWeatherService;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.model.function.FunctionCallback;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -50,7 +52,7 @@ class FunctionConfigTest {
         Book book = new Book();
         book.setName("La ciudad y los perros");
         book.setReview("Una novela sobre el colegio Leoncio Prado");
-        when(repo.findOneByName("La ciudad y los perros")).thenReturn(book);
+        when(repo.findByName("La ciudad y los perros")).thenReturn(List.of(book));
 
         FunctionCallback callback = config.bookInfoFunction(repo);
         String result = callback.call("{\"bookName\":\"La ciudad y los perros\"}");
@@ -58,6 +60,6 @@ class FunctionConfigTest {
         assertThat(callback.getName()).isEqualTo("BookInfo");
         assertThat(callback.getInputTypeSchema()).contains("bookName");
         assertThat(result).isEqualTo("Una novela sobre el colegio Leoncio Prado");
-        verify(repo).findOneByName("La ciudad y los perros");
+        verify(repo).findByName("La ciudad y los perros");
     }
 }

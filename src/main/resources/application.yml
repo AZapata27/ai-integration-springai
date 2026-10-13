@@ -6,4 +6,4 @@ spring:
     #database-platform: org.hibernate.dialect.PostgreSQLDialect
   ai:
     openai:
-      api-key: sk-
+      api-key: ${OPENAI_API_KEY:sk-}
