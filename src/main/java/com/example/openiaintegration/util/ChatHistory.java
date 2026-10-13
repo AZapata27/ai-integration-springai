@@ -48,7 +48,7 @@ public class ChatHistory {
     }
 
     private String getProperty(Message message, String key) {
-        return message.getProperties().getOrDefault(key, "").toString();
+        return message.getMetadata().getOrDefault(key, "").toString();
     }
 
     private void finalizeMessageGroup(String chatId, String groupId) {
@@ -59,7 +59,7 @@ public class ChatHistory {
                 this.commitToHistoryLog(chatId, sessionMessages.get(0));
             } else {
                 String aggregatedContent = sessionMessages.stream()
-                        .map(Message::getContent)
+                        .map(Message::getText)
                         .filter(Objects::nonNull)
                         .collect(Collectors.joining());
                 this.commitToHistoryLog(chatId, new AssistantMessage(aggregatedContent));

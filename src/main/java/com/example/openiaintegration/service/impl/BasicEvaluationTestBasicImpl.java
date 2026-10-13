@@ -2,8 +2,8 @@ package com.example.openiaintegration.service.impl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ai.chat.ChatClient;
-import org.springframework.ai.chat.ChatResponse;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.chat.messages.Message;
@@ -20,7 +20,7 @@ public class BasicEvaluationTestBasicImpl implements com.example.openiaintegrati
 
 	private static final Logger logger = LoggerFactory.getLogger(BasicEvaluationTestBasicImpl.class);
 
-	private final ChatClient openAiChatClient;
+	private final ChatClient chatClient;
 
 	@Value("classpath:/prompts/evaluation/qa-evaluator-accurate-answer.st")
 	protected Resource qaEvaluatorAccurateAnswerResource;
@@ -34,20 +34,22 @@ public class BasicEvaluationTestBasicImpl implements com.example.openiaintegrati
 	@Value("classpath:/prompts/evaluation/user-evaluator-message.st")
 	protected Resource userEvaluatorResource;
 
-    public BasicEvaluationTestBasicImpl(ChatClient openAiChatClient) {
-        this.openAiChatClient = openAiChatClient;
+    public BasicEvaluationTestBasicImpl(ChatClient chatClient) {
+        this.chatClient = chatClient;
     }
 
     @Override
 	public void evaluateQuestionAndAnswer(String question, ChatResponse response, boolean factBased) {
 
-		String answer = response.getResult().getOutput().getContent();
+		String answer = response.getResult().getOutput().getText();
 		logger.info("Question: {}" , question);
 		logger.info("Answer: {}" , answer);
 
 
-		PromptTemplate userPromptTemplate = new PromptTemplate(userEvaluatorResource,
-				Map.of("question", question, "answer", answer));
+		PromptTemplate userPromptTemplate = PromptTemplate.builder()
+				.resource(userEvaluatorResource)
+				.variables(Map.of("question", question, "answer", answer))
+				.build();
 
 
 		SystemMessage systemMessage;
@@ -62,7 +64,7 @@ public class BasicEvaluationTestBasicImpl implements com.example.openiaintegrati
 		Message userMessage = userPromptTemplate.createMessage();
 		Prompt prompt = new Prompt(List.of(userMessage, systemMessage));
 
-		String yesOrNo = openAiChatClient.call(prompt).getResult().getOutput().getContent();
+		String yesOrNo = chatClient.prompt(prompt).call().content();
 
 
 		logger.info("Is Answer related to question: {}" , yesOrNo);
@@ -71,7 +73,7 @@ public class BasicEvaluationTestBasicImpl implements com.example.openiaintegrati
 			SystemMessage notRelatedSystemMessage = new SystemMessage(qaEvaluatorNotRelatedResource);
 			prompt = new Prompt(List.of(userMessage, notRelatedSystemMessage));
 
-			String reasonForFailure = openAiChatClient.call(prompt).getResult().getOutput().getContent();
+			String reasonForFailure = chatClient.prompt(prompt).call().content();
 			logger.info("Reason for failure: {}", reasonForFailure);
 			logger.info("Answer is NOT related to question.");
 		}

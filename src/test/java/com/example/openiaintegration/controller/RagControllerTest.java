@@ -3,16 +3,17 @@ package com.example.openiaintegration.controller;
 import com.example.openiaintegration.service.IAuthorService;
 import com.example.openiaintegration.service.IBookService;
 import com.example.openiaintegration.service.RagService;
+import com.example.openiaintegration.support.TestChatClientConfig;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.springframework.ai.chat.ChatClient;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -38,28 +39,28 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * vector store are mocked.
  */
 @WebMvcTest(RagController.class)
-@Import(RagService.class)
+@Import({RagService.class, TestChatClientConfig.class})
 class RagControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
-    private ChatClient chatClient;
-    @MockBean
+    @MockitoBean
+    private ChatModel chatModel;
+    @MockitoBean
     private VectorStore vectorStore;
 
     // Required by the application runner that seeds data on startup
-    @MockBean
+    @MockitoBean
     private IAuthorService authorService;
-    @MockBean
+    @MockitoBean
     private IBookService bookService;
 
     @Test
     void askAnswersWithRetrievedContext() throws Exception {
         when(vectorStore.similaritySearch(any(SearchRequest.class)))
                 .thenReturn(List.of(new Document("doc-1", "El futuro es la inteligencia artificial", Map.of())));
-        when(chatClient.call(any(Prompt.class))).thenReturn(chatResponse("La inteligencia artificial."));
+        when(chatModel.call(any(Prompt.class))).thenReturn(chatResponse("La inteligencia artificial."));
 
         mockMvc.perform(get("/rag/ask").param("question", "Cual es el futuro?"))
                 .andExpect(status().isOk())
@@ -73,7 +74,7 @@ class RagControllerTest {
         assertThat(search.getValue().getTopK()).isEqualTo(RagService.DEFAULT_TOP_K);
 
         ArgumentCaptor<Prompt> prompt = ArgumentCaptor.forClass(Prompt.class);
-        verify(chatClient).call(prompt.capture());
+        verify(chatModel).call(prompt.capture());
         assertThat(prompt.getValue().getContents()).contains("El futuro es la inteligencia artificial");
     }
 
@@ -86,7 +87,7 @@ class RagControllerTest {
                 .andExpect(jsonPath("$.data.answer").value(RagService.NO_CONTEXT_ANSWER))
                 .andExpect(jsonPath("$.data.sources.length()").value(0));
 
-        verifyNoInteractions(chatClient);
+        verify(chatModel, never()).call(any(Prompt.class));
     }
 
     @Test
@@ -94,7 +95,8 @@ class RagControllerTest {
         mockMvc.perform(get("/rag/ask")).andExpect(status().isBadRequest());
         mockMvc.perform(get("/rag/ask").param("question", "   ")).andExpect(status().isBadRequest());
 
-        verifyNoInteractions(vectorStore, chatClient);
+        verifyNoInteractions(vectorStore);
+        verify(chatModel, never()).call(any(Prompt.class));
     }
 
     @Test

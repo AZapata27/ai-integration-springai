@@ -4,7 +4,7 @@ import com.example.openiaintegration.model.Book;
 import com.example.openiaintegration.repo.IBookRepo;
 import com.example.openiaintegration.service.impl.MockWeatherService;
 import org.junit.jupiter.api.Test;
-import org.springframework.ai.model.function.FunctionCallback;
+import org.springframework.ai.tool.ToolCallback;
 
 import java.util.List;
 
@@ -23,11 +23,11 @@ class FunctionConfigTest {
 
     @Test
     void weatherCallbackIsRegisteredUnderWeatherInfo() {
-        FunctionCallback callback = config.weatherFunctionInfo();
+        ToolCallback callback = config.weatherFunctionInfo();
 
-        assertThat(callback.getName()).isEqualTo("WeatherInfo");
-        assertThat(callback.getDescription()).isEqualTo("Get the weather in location");
-        assertThat(callback.getInputTypeSchema()).contains("location").contains("unit");
+        assertThat(callback.getToolDefinition().name()).isEqualTo("WeatherInfo");
+        assertThat(callback.getToolDefinition().description()).isEqualTo("Get the weather in location");
+        assertThat(callback.getToolDefinition().inputSchema()).contains("location").contains("unit");
     }
 
     @Test
@@ -54,11 +54,11 @@ class FunctionConfigTest {
         book.setReview("Una novela sobre el colegio Leoncio Prado");
         when(repo.findByName("La ciudad y los perros")).thenReturn(List.of(book));
 
-        FunctionCallback callback = config.bookInfoFunction(repo);
+        ToolCallback callback = config.bookInfoFunction(repo);
         String result = callback.call("{\"bookName\":\"La ciudad y los perros\"}");
 
-        assertThat(callback.getName()).isEqualTo("BookInfo");
-        assertThat(callback.getInputTypeSchema()).contains("bookName");
+        assertThat(callback.getToolDefinition().name()).isEqualTo("BookInfo");
+        assertThat(callback.getToolDefinition().inputSchema()).contains("bookName");
         assertThat(result).isEqualTo("Una novela sobre el colegio Leoncio Prado");
         verify(repo).findByName("La ciudad y los perros");
     }

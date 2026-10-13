@@ -4,15 +4,15 @@ import com.example.openiaintegration.service.IAuthorService;
 import com.example.openiaintegration.service.IBookService;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.springframework.ai.openai.OpenAiAudioTranscriptionClient;
+import org.springframework.ai.audio.transcription.AudioTranscription;
+import org.springframework.ai.audio.transcription.AudioTranscriptionPrompt;
+import org.springframework.ai.audio.transcription.AudioTranscriptionResponse;
+import org.springframework.ai.audio.transcription.TranscriptionModel;
 import org.springframework.ai.openai.OpenAiAudioTranscriptionOptions;
 import org.springframework.ai.openai.api.OpenAiAudioApi;
-import org.springframework.ai.openai.audio.transcription.AudioTranscription;
-import org.springframework.ai.openai.audio.transcription.AudioTranscriptionPrompt;
-import org.springframework.ai.openai.audio.transcription.AudioTranscriptionResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,17 +29,17 @@ class TranscriptControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
-    private OpenAiAudioTranscriptionClient transcriptionClient;
+    @MockitoBean
+    private TranscriptionModel transcriptionModel;
 
-    @MockBean
+    @MockitoBean
     private IAuthorService authorService;
-    @MockBean
+    @MockitoBean
     private IBookService bookService;
 
     @Test
     void transcribesSpanishSample() throws Exception {
-        when(transcriptionClient.call(any(AudioTranscriptionPrompt.class)))
+        when(transcriptionModel.call(any(AudioTranscriptionPrompt.class)))
                 .thenReturn(new AudioTranscriptionResponse(new AudioTranscription("hola mundo")));
 
         mockMvc.perform(get("/transcripts/es"))
@@ -56,7 +56,7 @@ class TranscriptControllerTest {
 
     @Test
     void transcribesEnglishSample() throws Exception {
-        when(transcriptionClient.call(any(AudioTranscriptionPrompt.class)))
+        when(transcriptionModel.call(any(AudioTranscriptionPrompt.class)))
                 .thenReturn(new AudioTranscriptionResponse(new AudioTranscription("hello world")));
 
         mockMvc.perform(get("/transcripts/en"))
@@ -70,7 +70,7 @@ class TranscriptControllerTest {
 
     private AudioTranscriptionPrompt capturePrompt() {
         ArgumentCaptor<AudioTranscriptionPrompt> captor = ArgumentCaptor.forClass(AudioTranscriptionPrompt.class);
-        verify(transcriptionClient).call(captor.capture());
+        verify(transcriptionModel).call(captor.capture());
         return captor.getValue();
     }
 }

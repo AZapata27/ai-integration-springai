@@ -7,3 +7,15 @@ spring:
   ai:
     openai:
       api-key: ${OPENAI_API_KEY:sk-}
+      chat:
+        options:
+          model: gpt-3.5-turbo
+          temperature: 1.0
+          max-tokens: 200
+    vectorstore:
+      chroma:
+        client:
+          host: http://localhost
+          port: 8000
+        collection-name: TestCollection
+        initialize-schema: true

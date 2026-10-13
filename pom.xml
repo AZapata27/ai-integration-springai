@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.5</version>
+        <version>3.5.16</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.example</groupId>
@@ -15,7 +15,7 @@
     <description>openia-integration</description>
     <properties>
         <java.version>21</java.version>
-        <spring-ai.version>0.8.1</spring-ai.version>
+        <spring-ai.version>1.1.8</spring-ai.version>
     </properties>
     <dependencies>
         <dependency>
@@ -45,25 +45,31 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.34</version>
+            <optional>true</optional>
         </dependency>
 
         <!-- OpenAI -->
         <dependency>
             <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-openai-spring-boot-starter</artifactId>
+            <artifactId>spring-ai-starter-model-openai</artifactId>
         </dependency>
 
         <!-- Ollama
         <dependency>
             <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-ollama-spring-boot-starter</artifactId>
+            <artifactId>spring-ai-starter-model-ollama</artifactId>
         </dependency> -->
 
         <!-- Vector Database -->
         <dependency>
             <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-chroma-store</artifactId>
+            <artifactId>spring-ai-starter-vector-store-chroma</artifactId>
+        </dependency>
+
+        <!-- RAG: QuestionAnswerAdvisor -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-advisors-vector-store</artifactId>
         </dependency>
     </dependencies>
     <dependencyManagement>
@@ -86,15 +92,5 @@
             </plugin>
         </plugins>
     </build>
-    <repositories>
-        <repository>
-            <id>spring-milestones</id>
-            <name>Spring Milestones</name>
-            <url>https://repo.spring.io/milestone</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
 
 </project>

@@ -2,11 +2,11 @@ package com.example.openiaintegration.controller;
 
 import com.example.openiaintegration.dto.ResponseDTO;
 import lombok.RequiredArgsConstructor;
-import org.springframework.ai.openai.OpenAiAudioTranscriptionClient;
+import org.springframework.ai.audio.transcription.AudioTranscriptionPrompt;
+import org.springframework.ai.audio.transcription.AudioTranscriptionResponse;
+import org.springframework.ai.audio.transcription.TranscriptionModel;
 import org.springframework.ai.openai.OpenAiAudioTranscriptionOptions;
 import org.springframework.ai.openai.api.OpenAiAudioApi;
-import org.springframework.ai.openai.audio.transcription.AudioTranscriptionPrompt;
-import org.springframework.ai.openai.audio.transcription.AudioTranscriptionResponse;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -26,20 +26,20 @@ import java.nio.file.Paths;
 public class TranscriptController {
 
     //Se usa el modelo Whisper
-    private final OpenAiAudioTranscriptionClient transcriptionClient;
+    private final TranscriptionModel transcriptionModel;
 
     @GetMapping("/es")
     public ResponseEntity<String> transcriptES() {
         OpenAiAudioTranscriptionOptions transcriptionOptions = OpenAiAudioTranscriptionOptions.builder()
-                .withLanguage("es")
-                .withResponseFormat(OpenAiAudioApi.TranscriptResponseFormat.TEXT)
-                .withTemperature(0f)
+                .language("es")
+                .responseFormat(OpenAiAudioApi.TranscriptResponseFormat.TEXT)
+                .temperature(0f)
                 .build();
 
         ClassPathResource audioFile = new ClassPathResource("/audios/es_audio1.flac");
 
         AudioTranscriptionPrompt transcriptionRequest = new AudioTranscriptionPrompt(audioFile, transcriptionOptions);
-        AudioTranscriptionResponse response = transcriptionClient.call(transcriptionRequest);
+        AudioTranscriptionResponse response = transcriptionModel.call(transcriptionRequest);
 
         return ResponseEntity.ok(response.getResult().getOutput());
     }
@@ -47,15 +47,15 @@ public class TranscriptController {
     @GetMapping("/en")
     public ResponseEntity<String> transcriptEN(){
         OpenAiAudioTranscriptionOptions transcriptionOptions = OpenAiAudioTranscriptionOptions.builder()
-                .withLanguage("en")
-                .withResponseFormat(OpenAiAudioApi.TranscriptResponseFormat.TEXT)
-                .withTemperature(0f)
+                .language("en")
+                .responseFormat(OpenAiAudioApi.TranscriptResponseFormat.TEXT)
+                .temperature(0f)
                 .build();
 
         ClassPathResource audioFile = new ClassPathResource("/audios/en_audio2.mp3");
 
         AudioTranscriptionPrompt transcriptionRequest = new AudioTranscriptionPrompt(audioFile, transcriptionOptions);
-        AudioTranscriptionResponse response = transcriptionClient.call(transcriptionRequest);
+        AudioTranscriptionResponse response = transcriptionModel.call(transcriptionRequest);
 
         return ResponseEntity.ok(response.getResult().getOutput());
     }
@@ -79,15 +79,15 @@ public class TranscriptController {
 
             // Realizar cualquier procesamiento adicional necesario
             OpenAiAudioTranscriptionOptions transcriptionOptions = OpenAiAudioTranscriptionOptions.builder()
-                    .withLanguage("es")
-                    .withResponseFormat(OpenAiAudioApi.TranscriptResponseFormat.TEXT)
-                    .withTemperature(0f)
+                    .language("es")
+                    .responseFormat(OpenAiAudioApi.TranscriptResponseFormat.TEXT)
+                    .temperature(0f)
                     .build();
 
             Resource audioFileUploaded = new FileSystemResource(uploadDirPath + fileName);
 
             AudioTranscriptionPrompt transcriptionRequest = new AudioTranscriptionPrompt(audioFileUploaded, transcriptionOptions);
-            AudioTranscriptionResponse response = transcriptionClient.call(transcriptionRequest);
+            AudioTranscriptionResponse response = transcriptionModel.call(transcriptionRequest);
 
             return ResponseEntity.ok(new ResponseDTO<String>(200, "success", response.getResult().getOutput()));
 

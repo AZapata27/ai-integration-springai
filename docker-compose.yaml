@@ -15,7 +15,7 @@ services:
 
   chroma_db:
     container_name: "chroma_db"
-    image: "ghcr.io/chroma-core/chroma:0.4.15"
+    image: "chromadb/chroma:1.0.20"
     ports:
       - ${CHROMA_LOCAL_PORT}:${CHROMA_DOCKER_PORT}
 volumes:

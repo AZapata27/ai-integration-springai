@@ -13,6 +13,10 @@ class ChatHistoryTest {
 
     private final ChatHistory history = new ChatHistory();
 
+    private static AssistantMessage assistantChunk(String text, Map<String, Object> properties) {
+        return AssistantMessage.builder().content(text).properties(properties).build();
+    }
+
     @Test
     void unknownChatHasEmptyHistory() {
         assertThat(history.getAll("missing")).isEmpty();
@@ -24,21 +28,21 @@ class ChatHistoryTest {
         history.addMessage("b", new UserMessage("other chat"));
         history.addMessage("a", new UserMessage("again"));
 
-        assertThat(history.getAll("a")).extracting(Message::getContent).containsExactly("hello", "again");
-        assertThat(history.getAll("b")).extracting(Message::getContent).containsExactly("other chat");
+        assertThat(history.getAll("a")).extracting(Message::getText).containsExactly("hello", "again");
+        assertThat(history.getAll("b")).extracting(Message::getText).containsExactly("other chat");
     }
 
     @Test
     void streamedAssistantChunksAreAggregatedUntilStop() {
-        history.addMessage("c", new AssistantMessage("Hel", Map.of("id", "m1")));
-        history.addMessage("c", new AssistantMessage("lo", Map.of("id", "m1")));
+        history.addMessage("c", assistantChunk("Hel", Map.of("id", "m1")));
+        history.addMessage("c", assistantChunk("lo", Map.of("id", "m1")));
 
         assertThat(history.getAll("c")).isEmpty();
 
-        history.addMessage("c", new AssistantMessage("!", Map.of("id", "m1", "finishReason", "STOP")));
+        history.addMessage("c", assistantChunk("!", Map.of("id", "m1", "finishReason", "STOP")));
 
         assertThat(history.getAll("c")).singleElement()
-                .extracting(Message::getContent).isEqualTo("Hello!");
+                .extracting(Message::getText).isEqualTo("Hello!");
     }
 
     @Test
@@ -47,7 +51,7 @@ class ChatHistoryTest {
             history.addMessage("d", new UserMessage("m" + i));
         }
 
-        assertThat(history.getLastN("d", 2)).extracting(Message::getContent).containsExactly("m4", "m5");
+        assertThat(history.getLastN("d", 2)).extracting(Message::getText).containsExactly("m4", "m5");
         assertThat(history.getLastN("d", 10)).hasSize(5);
     }
 }

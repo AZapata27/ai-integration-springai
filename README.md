@@ -6,9 +6,9 @@ A Spring Boot backend (with an Angular client in `frontend/`) that shows how to 
 
 ## 🚀 Features
 
-- **Chat**: plain prompts, prompt templates, structured output parsed into Java records, and a multi-turn conversation kept in memory (`/chats`). Uses OpenAI (`gpt-3.5-turbo`) through Spring AI's `ChatClient`.
-- **RAG (Retrieval Augmented Generation)**: documents are embedded and stored in Chroma; `/rag/ask` retrieves the top-K most similar documents and injects them as context in the prompt sent to the model. If nothing relevant is retrieved, the model is not called.
-- **Function Calling**: the model can invoke Java functions registered as Spring AI callbacks (`WeatherInfo`, a mock; `BookInfo`, which looks up a book review in PostgreSQL and reports "not found" when the book does not exist).
+- **Chat**: plain prompts, prompt templates, structured output parsed into Java records, and a multi-turn conversation kept in memory (`/chats`). Uses OpenAI (`gpt-3.5-turbo`) through Spring AI's fluent `ChatClient`; structured output uses `.entity(...)`.
+- **RAG (Retrieval Augmented Generation)**: documents are embedded and stored in Chroma; `/rag/ask` uses Spring AI's `QuestionAnswerAdvisor` to retrieve the top-K most similar documents and add them as context to the prompt sent to the model. If nothing relevant is retrieved, the model is not called.
+- **Function Calling**: the model can invoke Java functions registered as Spring AI tools (`FunctionToolCallback`: `WeatherInfo`, a mock; `BookInfo`, which looks up a book review in PostgreSQL and reports "not found" when the book does not exist).
 - **Book recommendations**: recommends books from the stored catalog (with their author and a reason) based on the user messages of a conversation kept in memory. Titles the model returns that are not in the catalog are discarded.
 - **Embeddings**: generate embeddings for a text and run a similarity search against the vector store.
 - **Image Generation**: DALL·E 2 / DALL·E 3 images from a text prompt (URL or base64).
@@ -17,17 +17,18 @@ A Spring Boot backend (with an Angular client in `frontend/`) that shows how to 
 
 ## 🛠️ Tech Stack
 
-- **Java 21**, **Spring Boot 3.2**, Maven wrapper
-- **Spring AI 0.8.1**: OpenAI chat, embeddings, image (DALL·E) and audio transcription (Whisper) clients; Chroma vector store
-- **Vector database**: Chroma (via Docker Compose)
+- **Java 21**, **Spring Boot 3.5**, Maven wrapper
+- **Spring AI 1.1** (BOM `spring-ai-bom`, artifacts from Maven Central): `ChatClient`, OpenAI chat, embedding, image (DALL·E) and transcription (Whisper) models, tool calling, `QuestionAnswerAdvisor`, Chroma vector store starter
+- **Vector database**: Chroma 1.x (`chromadb/chroma`, via Docker Compose)
 - **Database**: PostgreSQL (authors and books), started by Spring Boot's Docker Compose support
-- **Frontend**: Angular 17 (`frontend/`)
+- **Frontend**: Angular 21 with Angular Material (`frontend/`), built with `@angular/build`; unit tests with Vitest
 - **Tests**: JUnit 5, Mockito, `@WebMvcTest` slices. Models and the vector store are always mocked, so the build needs no API keys and no running infrastructure.
 - **Ollama** (optional, not wired by default): its starter is commented out in `pom.xml`.
 
 ## 📋 Prerequisites
 
 - Java 21
+- Node.js 22 (>= 22.12) or 24 for the frontend
 - Docker & Docker Compose (PostgreSQL and Chroma)
 - An OpenAI API key to call the real models (not needed to build or run the tests)
 
@@ -94,7 +95,7 @@ curl "http://localhost:8080/rag/ask?question=Que%20es%20Spring%20AI%3F&topK=2"
 
 ### Embeddings — `EmbeddingController`
 - `GET /embeddings/generate?message=` — embedding of a text
-- `GET /embeddings/vectorstore?message=` — stores three demo documents and returns the most similar one
+- `GET /embeddings/vectorstore?message=` — stores three demo documents and returns the most similar one (Spring AI 1.x `Document`: the content is in the `text` field)
 
 ### Images — `ImageController`
 - `GET /images/generate?param=` — DALL·E 3 HD, URL
@@ -127,11 +128,12 @@ flowchart LR
     end
 
     subgraph AI["Spring AI"]
-        CC["ChatClient<br/>(OpenAiChatClient)"]
-        EC["EmbeddingClient"]
-        IC["ImageClient"]
-        TC["AudioTranscriptionClient"]
-        FCB["Function callbacks<br/>WeatherInfo, BookInfo"]
+        CC["ChatClient<br/>(OpenAI chat model)"]
+        QA["QuestionAnswerAdvisor<br/>+ EmptyContextAdvisor"]
+        EC["EmbeddingModel"]
+        IC["ImageModel"]
+        TC["TranscriptionModel"]
+        FCB["Tools (FunctionToolCallback)<br/>WeatherInfo, BookInfo"]
     end
 
     CHAT --> CC
@@ -143,9 +145,11 @@ flowchart LR
     TR --> TC --> OPENAI
 
     RAG --> RS["RagService"]
-    RS -- "1. similarity search (top-K)" --> VS["Chroma vector store"]
-    VS -- "2. retrieved documents" --> RS
-    RS -- "3. prompt = system context<br/>+ user question" --> CC
+    RS -- "question + top-K" --> CC
+    CC --> QA
+    QA -- "1. similarity search (top-K)" --> VS["Chroma vector store"]
+    VS -- "2. retrieved documents" --> QA
+    QA -- "3. user question + CONTEXTO<br/>(no documents: answer without calling the model)" --> OPENAI
     RAG -- "POST /rag/documents" --> VS
     EMB --> EC --> OPENAI
     EC -. "embeddings" .-> VS
@@ -160,9 +164,9 @@ flowchart LR
     FCB -- "BookInfo lookup" --> DB
 ```
 
-Requests from the Angular client hit the REST controllers, which delegate to Spring AI clients. Chat and function calling go through `ChatClient` (OpenAI), and the model may call the registered Java functions (`WeatherInfo`, `BookInfo`).
+Requests from the Angular client hit the REST controllers, which delegate to Spring AI models. Chat and tool calling go through the fluent `ChatClient` (OpenAI), and the model may call the registered tools (`WeatherInfo`, `BookInfo`), enabled per request with `OpenAiChatOptions.builder().toolNames(...)`.
 
-For RAG, `RagService` runs a similarity search for the question in Chroma (top-K, default 4, max 10), joins the retrieved documents into the system message of the prompt and sends it with the user question to the model, which is told to answer only from that context. The response includes the sources used. Spring AI 0.8.1 has no `QuestionAnswerAdvisor`, so the prompt is built explicitly with a `SystemPromptTemplate`.
+For RAG, `RagService` calls the `ChatClient` with a `QuestionAnswerAdvisor` that runs a similarity search for the question in Chroma (top-K, default 4, max 10) and appends the retrieved documents to the user message under `CONTEXTO:`; the system message tells the model to answer only from that context. `EmptyContextAdvisor` runs right after it: when nothing was retrieved it returns a fixed answer and the model is not called. The response includes the sources used.
 
 Recommendations combine the user messages stored in `ChatHistory` with the enabled books of the catalog; the model picks among those titles and the service keeps only titles that exist. Authors and books are persisted in PostgreSQL through Spring Data JPA; conversation history is kept in memory and is lost on restart.
 
@@ -171,12 +175,12 @@ Recommendations combine the user messages stored in `ChatHistory` with the enabl
 ```
 ai-integration-springai/
 ├── src/main/java/com/example/openiaintegration/
-│   ├── config/          # OpenAI chat client, Chroma vector store, function callbacks
+│   ├── config/          # ChatClient bean and tool callbacks
 │   ├── controller/      # REST controllers
 │   ├── dto/             # Request/response records
 │   ├── model/           # JPA entities (Author, Book)
 │   ├── repo/            # Spring Data repositories
-│   ├── service/         # RAG, recommendations, CRUD services and implementations
+│   ├── service/         # RAG (+ EmptyContextAdvisor), recommendations, CRUD services
 │   └── util/            # In-memory ChatHistory
 ├── src/main/resources/
 │   ├── application.yml  # Application config
@@ -193,8 +197,8 @@ ai-integration-springai/
 
 ## 🔧 Configuration
 
-- **OpenAI**: `spring.ai.openai.api-key` reads `OPENAI_API_KEY`. The chat client is defined in `OpenAIConfig` (`gpt-3.5-turbo`, max 200 tokens).
-- **Chroma**: `ChromaConfig` connects to `http://localhost:8000` and uses the collection `TestCollection`; the port must match `CHROMA_LOCAL_PORT` in `.env`.
+- **OpenAI**: `spring.ai.openai.api-key` reads `OPENAI_API_KEY` (defaults to a placeholder so the app context and tests start without a key). Chat defaults live in `spring.ai.openai.chat.options.*` (`gpt-3.5-turbo`, temperature 1.0, max 200 tokens); `ChatClientConfig` exposes the `ChatClient` bean.
+- **Chroma**: configured by the Spring AI starter through `spring.ai.vectorstore.chroma.*` (`http://localhost:8000`, collection `TestCollection`, `initialize-schema: true`); the port must match `CHROMA_LOCAL_PORT` in `.env`. Spring AI 1.x talks to the Chroma v2 API, so Chroma 1.x is required (`docker-compose.yaml` uses `chromadb/chroma:1.0.20`).
 - **PostgreSQL**: connection details come from `docker-compose.yaml` and `.env` through Spring Boot's Docker Compose support; the schema is created on startup (`ddl-auto: create`).
 
 ## 🤝 Contributing
