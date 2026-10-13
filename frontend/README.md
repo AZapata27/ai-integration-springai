@@ -1,6 +1,6 @@
 # Bookstore
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 17.3.3.
+This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 17.3.3 and is now on Angular 21 (`@angular/build`). Requires Node.js 22 (>= 22.12) or 24.
 
 ## Development server
 
@@ -16,7 +16,7 @@ Run `ng build` to build the project. The build artifacts will be stored in the `
 
 ## Running unit tests
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+Run `npm test` (`ng test --watch=false`) to execute the unit tests with [Vitest](https://vitest.dev) through `@angular/build:unit-test`.
 
 ## Running end-to-end tests
 
