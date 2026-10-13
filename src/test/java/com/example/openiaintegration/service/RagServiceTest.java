@@ -52,14 +52,16 @@ class RagServiceTest {
 
         Message system = messages.get(0);
         assertThat(system.getMessageType()).isEqualTo(MessageType.SYSTEM);
-        assertThat(system.getText())
+        assertThat(system.getText()).contains("UNICAMENTE el contexto proporcionado");
+
+        // QuestionAnswerAdvisor appends the retrieved documents to the user message
+        Message user = messages.get(1);
+        assertThat(user.getMessageType()).isEqualTo(MessageType.USER);
+        assertThat(user.getText())
+                .startsWith("Que es Spring AI?")
                 .contains("CONTEXTO:")
                 .contains("Spring AI integra modelos de lenguaje en Spring Boot")
                 .contains("Chroma es una base de datos vectorial");
-
-        Message user = messages.get(1);
-        assertThat(user.getMessageType()).isEqualTo(MessageType.USER);
-        assertThat(user.getText()).isEqualTo("Que es Spring AI?");
 
         assertThat(answer.answer()).isEqualTo("Spring AI integra LLMs en Spring Boot.");
         assertThat(answer.sources()).extracting("id").containsExactly("spring-doc", "chroma-doc");
