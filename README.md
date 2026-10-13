@@ -43,15 +43,12 @@ A powerful Spring Boot backend for AI-powered applications that integrates vario
    ```
 
 2. **Configure environment variables**
-   Create a `.env` file in the root directory with the following variables:
+   Copy the template used by Docker Compose and adjust the values:
+   ```bash
+   cp .env.example .env
    ```
-   OPENAI_API_KEY=your_openai_key
-   CHROMA_DB_HOST=localhost
-   CHROMA_DB_PORT=8000
-   OLLAMA_API_URL=http://localhost:11434
-   DB_USERNAME=postgres
-   DB_PASSWORD=yourpassword
-   ```
+   The application also expects `OPENAI_API_KEY` (and optionally `OLLAMA_API_URL`) in your shell environment.
+   Never commit `.env`.
 
 3. **Start the services**
    ```bash
