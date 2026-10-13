@@ -1,0 +1,29 @@
+# Releases with release-please (central reusable workflow): Conventional Commits on master ->
+# release PR -> tag vX.Y.Z + GitHub Release + CHANGELOG.md. No artifacts are published.
+name: Release
+
+on:
+  push:
+    branches: [master]
+
+permissions: {}
+
+concurrency:
+  group: release-please
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release
+    uses: AZapata27/reusable-workflows/.github/workflows/release.yml@dd1bf38000c4f44c4939abe2ce0da8e1fac11993 # v1.0.0
+    # GitHub checks the permissions of every job in the called workflow against this ceiling
+    # at start-up, including the provenance job that is skipped (no artifact-name passed).
+    permissions:
+      contents: write        # release-please: tags, releases, release branch
+      issues: write          # release-please: autorelease labels
+      pull-requests: write   # release-please: release PR
+      id-token: write        # ceiling for the (skipped) provenance job
+      attestations: write    # ceiling for the (skipped) provenance job
+    with:
+      config-file: release-please-config.json
+      manifest-file: .release-please-manifest.json

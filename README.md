@@ -1,6 +1,6 @@
 # AI Integration Spring Boot Backend
 
-[![CI](https://github.com/AZapata27/ai-integration-springai/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/AZapata27/ai-integration-springai/actions/workflows/ci.yml)
+[![CI](https://github.com/AZapata27/ai-integration-springai/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/AZapata27/ai-integration-springai/actions/workflows/ci.yml) [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/AZapata27/ai-integration-springai/badge)](https://scorecard.dev/viewer/?uri=github.com/AZapata27/ai-integration-springai)
 
 A Spring Boot backend (with an Angular client in `frontend/`) that shows how to integrate LLMs with Spring AI: chat, prompt templates, structured output, retrieval augmented generation over a Chroma vector store, function calling, image generation and speech-to-text.
 
