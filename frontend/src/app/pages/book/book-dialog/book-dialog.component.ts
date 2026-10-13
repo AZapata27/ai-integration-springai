@@ -49,7 +49,7 @@ export class BookDialogComponent implements OnInit {
   isRecording: boolean = false;
   audioContext: AudioContext;
   analyser: AnalyserNode;
-  dataArray: Uint8Array;
+  dataArray: Uint8Array<ArrayBuffer>;
   peakBars: number[] = [];
   mediaStream: MediaStream;
   audioSource: MediaStreamAudioSourceNode;
