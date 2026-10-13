@@ -4,6 +4,8 @@ on:
   push:
     branches: [master]
   pull_request:
+  schedule:
+    - cron: '23 6 * * 1' # weekly run, mainly for CodeQL (security job)
 
 permissions: {}
 
