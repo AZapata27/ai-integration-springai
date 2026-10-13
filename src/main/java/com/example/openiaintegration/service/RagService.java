@@ -3,11 +3,7 @@ package com.example.openiaintegration.service;
 import com.example.openiaintegration.dto.RagAnswer;
 import com.example.openiaintegration.dto.RagSource;
 import lombok.RequiredArgsConstructor;
-import org.springframework.ai.chat.ChatClient;
-import org.springframework.ai.chat.messages.Message;
-import org.springframework.ai.chat.messages.UserMessage;
-import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.chat.prompt.SystemPromptTemplate;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -49,7 +45,7 @@ public class RagService {
 
     public RagAnswer ask(String question, int topK) {
         int k = Math.max(1, Math.min(topK, MAX_TOP_K));
-        List<Document> documents = vectorStore.similaritySearch(SearchRequest.query(question).withTopK(k));
+        List<Document> documents = vectorStore.similaritySearch(SearchRequest.builder().query(question).topK(k).build());
 
         if (documents == null || documents.isEmpty()) {
             // Nothing to ground the answer on: do not call the model, so it cannot make one up.
@@ -57,15 +53,16 @@ public class RagService {
         }
 
         String context = documents.stream()
-                .map(Document::getContent)
+                .map(Document::getText)
                 .collect(Collectors.joining(DOCUMENT_SEPARATOR));
 
-        Message systemMessage = new SystemPromptTemplate(SYSTEM_TEMPLATE).createMessage(Map.of("context", context));
-        Prompt prompt = new Prompt(List.of(systemMessage, new UserMessage(question)));
-
-        String answer = chatClient.call(prompt).getResult().getOutput().getContent();
+        String answer = chatClient.prompt()
+                .system(system -> system.text(SYSTEM_TEMPLATE).param("context", context))
+                .user(question)
+                .call()
+                .content();
         List<RagSource> sources = documents.stream()
-                .map(document -> new RagSource(document.getId(), document.getContent()))
+                .map(document -> new RagSource(document.getId(), document.getText()))
                 .toList();
 
         return new RagAnswer(question, answer, sources);

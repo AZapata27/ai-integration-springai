@@ -5,14 +5,14 @@ import com.example.openiaintegration.service.IBookService;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.ai.image.Image;
-import org.springframework.ai.image.ImageClient;
+import org.springframework.ai.image.ImageModel;
 import org.springframework.ai.image.ImageGeneration;
 import org.springframework.ai.image.ImagePrompt;
 import org.springframework.ai.image.ImageResponse;
 import org.springframework.ai.openai.OpenAiImageOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -31,17 +31,17 @@ class ImageControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
-    private ImageClient imageClient;
+    @MockitoBean
+    private ImageModel imageModel;
 
-    @MockBean
+    @MockitoBean
     private IAuthorService authorService;
-    @MockBean
+    @MockitoBean
     private IBookService bookService;
 
     @Test
     void generateUsesDallE3HdAndReturnsUrl() throws Exception {
-        when(imageClient.call(any(ImagePrompt.class))).thenReturn(image("https://img.example/cat.png", null));
+        when(imageModel.call(any(ImagePrompt.class))).thenReturn(image("https://img.example/cat.png", null));
 
         mockMvc.perform(get("/images/generate").param("param", "a cat"))
                 .andExpect(status().isOk())
@@ -58,7 +58,7 @@ class ImageControllerTest {
 
     @Test
     void generateBytesRequestsBase64Payload() throws Exception {
-        when(imageClient.call(any(ImagePrompt.class))).thenReturn(image(null, "aGVsbG8="));
+        when(imageModel.call(any(ImagePrompt.class))).thenReturn(image(null, "aGVsbG8="));
 
         mockMvc.perform(get("/images/generateBytes").param("param", "a dog"))
                 .andExpect(status().isOk())
@@ -71,7 +71,7 @@ class ImageControllerTest {
 
     @Test
     void generateDallE2UsesSmallSize() throws Exception {
-        when(imageClient.call(any(ImagePrompt.class))).thenReturn(image("https://img.example/small.png", null));
+        when(imageModel.call(any(ImagePrompt.class))).thenReturn(image("https://img.example/small.png", null));
 
         mockMvc.perform(get("/images/generate/dalle2").param("param", "a bird"))
                 .andExpect(status().isOk())
@@ -88,7 +88,7 @@ class ImageControllerTest {
 
     private ImagePrompt capturePrompt() {
         ArgumentCaptor<ImagePrompt> captor = ArgumentCaptor.forClass(ImagePrompt.class);
-        verify(imageClient).call(captor.capture());
+        verify(imageModel).call(captor.capture());
         return captor.getValue();
     }
 }

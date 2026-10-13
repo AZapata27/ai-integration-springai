@@ -3,14 +3,18 @@ package com.example.openiaintegration.config;
 import com.example.openiaintegration.repo.IBookRepo;
 import com.example.openiaintegration.service.impl.BookFunctionServiceImpl;
 import com.example.openiaintegration.service.impl.MockWeatherService;
-import org.springframework.ai.model.function.FunctionCallback;
-import org.springframework.ai.model.function.FunctionCallbackWrapper;
+import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.tool.function.FunctionToolCallback;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Description;
 
 import java.util.function.Function;
 
+/**
+ * Tools the model can call. Each {@link ToolCallback} bean is resolved by its name
+ * ({@code WeatherInfo}, {@code BookInfo}) when a request enables it with {@code toolNames(...)}.
+ */
 @Configuration
 public class FunctionConfig {
 
@@ -21,22 +25,24 @@ public class FunctionConfig {
     }
 
     @Bean
-    public FunctionCallback weatherFunctionInfo(){
-        return FunctionCallbackWrapper.builder(new MockWeatherService())
-                .withName("WeatherInfo")
-                .withDescription("Get the weather in location")
-                .withResponseConverter(response -> "" + response.temp() + response.unit())
+    public ToolCallback weatherFunctionInfo(){
+        return FunctionToolCallback.builder("WeatherInfo", new MockWeatherService())
+                .description("Get the weather in location")
+                .inputType(MockWeatherService.Request.class)
+                .toolCallResultConverter((result, returnType) -> {
+                    MockWeatherService.Response response = (MockWeatherService.Response) result;
+                    return "" + response.temp() + response.unit();
+                })
                 .build();
     }
 
     ////////////////////////
     @Bean
-    public FunctionCallback bookInfoFunction(IBookRepo repo){
-
-        return FunctionCallbackWrapper.builder(new BookFunctionServiceImpl(repo))
-                .withName("BookInfo")
-                .withDescription("Get book info from book name")
-                .withResponseConverter(response -> "" + response.review())
+    public ToolCallback bookInfoFunction(IBookRepo repo){
+        return FunctionToolCallback.builder("BookInfo", new BookFunctionServiceImpl(repo))
+                .description("Get book info from book name")
+                .inputType(BookFunctionServiceImpl.Request.class)
+                .toolCallResultConverter((result, returnType) -> ((BookFunctionServiceImpl.Response) result).review())
                 .build();
     }
 }

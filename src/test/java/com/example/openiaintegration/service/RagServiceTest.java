@@ -3,7 +3,8 @@ package com.example.openiaintegration.service;
 import com.example.openiaintegration.dto.RagAnswer;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.springframework.ai.chat.ChatClient;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.ai.chat.prompt.Prompt;
@@ -26,16 +27,16 @@ import static org.mockito.Mockito.when;
 
 class RagServiceTest {
 
-    private final ChatClient chatClient = mock(ChatClient.class);
+    private final ChatModel chatModel = mock(ChatModel.class);
     private final VectorStore vectorStore = mock(VectorStore.class);
-    private final RagService ragService = new RagService(chatClient, vectorStore);
+    private final RagService ragService = new RagService(ChatClient.create(chatModel), vectorStore);
 
     @Test
     void retrievedDocumentsAreInjectedAsContextInThePrompt() {
         Document spring = new Document("spring-doc", "Spring AI integra modelos de lenguaje en Spring Boot", Map.of());
         Document chroma = new Document("chroma-doc", "Chroma es una base de datos vectorial", Map.of());
         when(vectorStore.similaritySearch(any(SearchRequest.class))).thenReturn(List.of(spring, chroma));
-        when(chatClient.call(any(Prompt.class))).thenReturn(chatResponse("Spring AI integra LLMs en Spring Boot."));
+        when(chatModel.call(any(Prompt.class))).thenReturn(chatResponse("Spring AI integra LLMs en Spring Boot."));
 
         RagAnswer answer = ragService.ask("Que es Spring AI?", 2);
 
@@ -45,20 +46,20 @@ class RagServiceTest {
         assertThat(search.getValue().getTopK()).isEqualTo(2);
 
         ArgumentCaptor<Prompt> captor = ArgumentCaptor.forClass(Prompt.class);
-        verify(chatClient).call(captor.capture());
+        verify(chatModel).call(captor.capture());
         List<Message> messages = captor.getValue().getInstructions();
         assertThat(messages).hasSize(2);
 
         Message system = messages.get(0);
         assertThat(system.getMessageType()).isEqualTo(MessageType.SYSTEM);
-        assertThat(system.getContent())
+        assertThat(system.getText())
                 .contains("CONTEXTO:")
                 .contains("Spring AI integra modelos de lenguaje en Spring Boot")
                 .contains("Chroma es una base de datos vectorial");
 
         Message user = messages.get(1);
         assertThat(user.getMessageType()).isEqualTo(MessageType.USER);
-        assertThat(user.getContent()).isEqualTo("Que es Spring AI?");
+        assertThat(user.getText()).isEqualTo("Que es Spring AI?");
 
         assertThat(answer.answer()).isEqualTo("Spring AI integra LLMs en Spring Boot.");
         assertThat(answer.sources()).extracting("id").containsExactly("spring-doc", "chroma-doc");
@@ -72,7 +73,7 @@ class RagServiceTest {
 
         assertThat(answer.answer()).isEqualTo(RagService.NO_CONTEXT_ANSWER);
         assertThat(answer.sources()).isEmpty();
-        verifyNoInteractions(chatClient);
+        verify(chatModel, never()).call(any(Prompt.class));
     }
 
     @Test
@@ -94,7 +95,7 @@ class RagServiceTest {
 
         ArgumentCaptor<List<Document>> stored = ArgumentCaptor.forClass(List.class);
         verify(vectorStore).add(stored.capture());
-        assertThat(stored.getValue()).extracting(Document::getContent)
+        assertThat(stored.getValue()).extracting(Document::getText)
                 .containsExactly("Primer documento", "Segundo documento");
         assertThat(ids).hasSize(2).doesNotContainNull();
     }

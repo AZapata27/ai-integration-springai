@@ -5,18 +5,10 @@ import com.example.openiaintegration.dto.BookInfoDTO;
 import com.example.openiaintegration.dto.ResponseDTO;
 import com.example.openiaintegration.util.ChatHistory;
 import lombok.RequiredArgsConstructor;
-import org.springframework.ai.chat.ChatClient;
-import org.springframework.ai.chat.ChatResponse;
-import org.springframework.ai.chat.Generation;
-import org.springframework.ai.chat.messages.ChatMessage;
-import org.springframework.ai.chat.messages.MessageType;
-import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.chat.prompt.PromptTemplate;
-import org.springframework.ai.parser.BeanOutputParser;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/chats")
@@ -29,8 +21,10 @@ public class ChatController {
 
     @GetMapping("/generate")
     public ResponseEntity<ResponseDTO<String>> generateText(@RequestParam(value = "message") String message) {
-        ChatResponse chatResponse = chatClient.call(new Prompt(message));
-        String result = chatResponse.getResult().getOutput().getContent();
+        String result = chatClient.prompt()
+                .user(message)
+                .call()
+                .content();
 
         return ResponseEntity.ok(new ResponseDTO<>(200, "success", result));
     }
@@ -40,31 +34,28 @@ public class ChatController {
             @RequestParam(value = "param") String param,
             @RequestParam(value = "topic") String topic) {
 
-        PromptTemplate promptTemplate = new PromptTemplate("Tell me about {param} and {topic}");
-        Prompt prompt = promptTemplate.create(Map.of("param", param, "topic", topic));
-
-        ChatResponse chatResponse = chatClient.call(prompt);
-        String result = chatResponse.getResult().getOutput().getContent();
+        String result = chatClient.prompt()
+                .user(user -> user.text("Tell me about {param} and {topic}")
+                        .param("param", param)
+                        .param("topic", topic))
+                .call()
+                .content();
 
         return ResponseEntity.ok(new ResponseDTO<>(200, "success", result));
     }
 
+    /**
+     * Structured output: {@code entity(...)} appends the JSON schema of {@link AuthorBook} to the prompt
+     * and converts the model answer into the record.
+     */
     @GetMapping("/generate/output")
     public ResponseEntity<AuthorBook> generateOutputParser(
             @RequestParam(value = "author") String author){
 
-        BeanOutputParser<AuthorBook> outputParser = new BeanOutputParser<>(AuthorBook.class);
-
-        String template = """
-                Tell me book titles of {author}. {format}
-                """;
-
-        PromptTemplate promptTemplate = new PromptTemplate(template, Map.of("author", author, "format", outputParser.getFormat()));
-        Prompt prompt = promptTemplate.create(Map.of("author", author));
-
-        ChatResponse chatResponse = chatClient.call(prompt);
-        Generation generation = chatResponse.getResult();
-        AuthorBook authorBook = outputParser.parse(generation.getOutput().getContent());
+        AuthorBook authorBook = chatClient.prompt()
+                .user(user -> user.text("Tell me book titles of {author}.").param("author", author))
+                .call()
+                .entity(AuthorBook.class);
 
         return ResponseEntity.ok(authorBook);
     }
@@ -73,18 +64,11 @@ public class ChatController {
     public ResponseEntity<BookInfoDTO> generateOutputParserBook(
             @RequestParam(value = "name") String bookName){
 
-        BeanOutputParser<BookInfoDTO> outputParser = new BeanOutputParser<>(BookInfoDTO.class);
-
-        String template = """
-                Tell me the author of this book which name is {bookName}. {format}
-                """;
-
-        PromptTemplate promptTemplate = new PromptTemplate(template, Map.of("bookName", bookName, "format", outputParser.getFormat() ));
-        Prompt prompt = promptTemplate.create(Map.of("bookName", bookName));
-
-        ChatResponse chatResponse = chatClient.call(prompt);
-        Generation generation = chatResponse.getResult();
-        BookInfoDTO bookInfoDTO = outputParser.parse(generation.getOutput().getContent());
+        BookInfoDTO bookInfoDTO = chatClient.prompt()
+                .user(user -> user.text("Tell me the author of this book which name is {bookName}.")
+                        .param("bookName", bookName))
+                .call()
+                .entity(BookInfoDTO.class);
 
         return ResponseEntity.ok(bookInfoDTO);
     }
@@ -94,19 +78,23 @@ public class ChatController {
     public ResponseEntity<ResponseDTO<String>> generateConversation(
             @RequestParam(value = "message") String message){
 
-        chatHistory.addMessage("1", new ChatMessage(MessageType.USER, message));
+        chatHistory.addMessage("1", new UserMessage(message));
 
-        ChatResponse chatResponse = chatClient.call(new Prompt(chatHistory.getAll("1")));
-        String result = chatResponse.getResult().getOutput().getContent();
+        String result = chatClient.prompt()
+                .messages(chatHistory.getAll("1"))
+                .call()
+                .content();
 
         return ResponseEntity.ok(new ResponseDTO<>(200, "success", result));
     }
 
      /*@GetMapping("/ollama")
     public ResponseEntity<String> testOllama(@RequestParam("text") String text){
-        ChatResponse response = chatClient.call(new Prompt(text, OllamaOptions.create().withModel("codellama:7b")));
-
-        String content = response.getResult().getOutput().getContent();
+        String content = chatClient.prompt()
+                .user(text)
+                .options(OllamaOptions.builder().model("codellama:7b").build())
+                .call()
+                .content();
 
         return ResponseEntity.ok(content);
     }*/

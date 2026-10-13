@@ -3,7 +3,8 @@ package com.example.openiaintegration.service.impl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.springframework.ai.chat.ChatClient;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.ai.chat.prompt.Prompt;
@@ -25,13 +26,13 @@ import static org.mockito.Mockito.when;
  */
 class BasicEvaluationTestBasicImplTest {
 
-    private ChatClient chatClient;
+    private ChatModel chatModel;
     private BasicEvaluationTestBasicImpl evaluator;
 
     @BeforeEach
     void setUp() {
-        chatClient = mock(ChatClient.class);
-        evaluator = new BasicEvaluationTestBasicImpl(chatClient);
+        chatModel = mock(ChatModel.class);
+        evaluator = new BasicEvaluationTestBasicImpl(ChatClient.create(chatModel));
         evaluator.qaEvaluatorAccurateAnswerResource = new ClassPathResource("prompts/evaluation/qa-evaluator-accurate-answer.st");
         evaluator.qaEvaluatorNotRelatedResource = new ClassPathResource("prompts/evaluation/qa-evaluator-not-related-message.st");
         evaluator.qaEvaluatorFactBasedAnswerResource = new ClassPathResource("prompts/evaluation/qa-evaluator-fact-based-answer.st");
@@ -40,44 +41,44 @@ class BasicEvaluationTestBasicImplTest {
 
     @Test
     void relatedAnswerNeedsASingleModelCall() {
-        when(chatClient.call(any(Prompt.class))).thenReturn(chatResponse("YES"));
+        when(chatModel.call(any(Prompt.class))).thenReturn(chatResponse("YES"));
 
         evaluator.evaluateQuestionAndAnswer("Capital of France?", chatResponse("Paris"), false);
 
         ArgumentCaptor<Prompt> captor = ArgumentCaptor.forClass(Prompt.class);
-        verify(chatClient, times(1)).call(captor.capture());
+        verify(chatModel, times(1)).call(captor.capture());
 
         List<Message> messages = captor.getValue().getInstructions();
         assertThat(messages).extracting(Message::getMessageType)
                 .containsExactly(MessageType.USER, MessageType.SYSTEM);
-        assertThat(messages.get(0).getContent()).contains("Capital of France?").contains("Paris");
-        assertThat(messages.get(1).getContent()).isEqualTo(contentOf(evaluator.qaEvaluatorAccurateAnswerResource));
+        assertThat(messages.get(0).getText()).contains("Capital of France?").contains("Paris");
+        assertThat(messages.get(1).getText()).isEqualTo(contentOf(evaluator.qaEvaluatorAccurateAnswerResource));
     }
 
     @Test
     void factBasedEvaluationUsesFactBasedSystemPrompt() {
-        when(chatClient.call(any(Prompt.class))).thenReturn(chatResponse("yes"));
+        when(chatModel.call(any(Prompt.class))).thenReturn(chatResponse("yes"));
 
         evaluator.evaluateQuestionAndAnswer("Who wrote it?", chatResponse("Vargas Llosa"), true);
 
         ArgumentCaptor<Prompt> captor = ArgumentCaptor.forClass(Prompt.class);
-        verify(chatClient).call(captor.capture());
-        assertThat(captor.getValue().getInstructions().get(1).getContent())
+        verify(chatModel).call(captor.capture());
+        assertThat(captor.getValue().getInstructions().get(1).getText())
                 .isEqualTo(contentOf(evaluator.qaEvaluatorFactBasedAnswerResource));
     }
 
     @Test
     void unrelatedAnswerAsksTheModelForTheReason() {
-        when(chatClient.call(any(Prompt.class)))
+        when(chatModel.call(any(Prompt.class)))
                 .thenReturn(chatResponse("no"))
                 .thenReturn(chatResponse("The answer talks about something else"));
 
         evaluator.evaluateQuestionAndAnswer("Capital of France?", chatResponse("Bananas"), false);
 
         ArgumentCaptor<Prompt> captor = ArgumentCaptor.forClass(Prompt.class);
-        verify(chatClient, times(2)).call(captor.capture());
+        verify(chatModel, times(2)).call(captor.capture());
         Prompt followUp = captor.getAllValues().get(1);
-        assertThat(followUp.getInstructions().get(1).getContent())
+        assertThat(followUp.getInstructions().get(1).getText())
                 .isEqualTo(contentOf(evaluator.qaEvaluatorNotRelatedResource));
     }
 

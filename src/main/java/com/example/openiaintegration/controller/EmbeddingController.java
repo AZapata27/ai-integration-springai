@@ -2,7 +2,7 @@ package com.example.openiaintegration.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.document.Document;
-import org.springframework.ai.embedding.EmbeddingClient;
+import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.embedding.EmbeddingResponse;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -19,13 +19,13 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class EmbeddingController {
 
-    private final EmbeddingClient embeddingClient;
+    private final EmbeddingModel embeddingModel;
     private final VectorStore vectorStore;
 
     @GetMapping("/generate")
     public Map<String, EmbeddingResponse> generateEmbeddings(@RequestParam(value = "message") String message) {
 
-        EmbeddingResponse embeddingResponse = this.embeddingClient.embedForResponse(List.of(message));
+        EmbeddingResponse embeddingResponse = this.embeddingModel.embedForResponse(List.of(message));
 
         return Map.of("embedding", embeddingResponse);
     }
@@ -43,6 +43,6 @@ public class EmbeddingController {
 
         vectorStore.add(documents);
 
-        return vectorStore.similaritySearch(SearchRequest.query(message).withTopK(1));
+        return vectorStore.similaritySearch(SearchRequest.builder().query(message).topK(1).build());
     }
 }

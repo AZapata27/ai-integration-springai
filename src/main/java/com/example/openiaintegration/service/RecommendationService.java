@@ -8,12 +8,12 @@ import com.example.openiaintegration.util.ChatHistory;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ai.chat.ChatClient;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
-import org.springframework.ai.parser.BeanOutputParser;
+import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -67,7 +67,7 @@ public class RecommendationService {
 
         List<String> userMessages = chatHistory.getLastN(chatId, HISTORY_WINDOW).stream()
                 .filter(message -> message.getMessageType() == MessageType.USER)
-                .map(Message::getContent)
+                .map(Message::getText)
                 .toList();
         if (userMessages.isEmpty()) {
             return new BookRecommendations(List.of(),
@@ -84,18 +84,18 @@ public class RecommendationService {
             return new BookRecommendations(List.of(), "El catalogo no tiene libros disponibles.");
         }
 
-        BeanOutputParser<ModelRecommendations> parser = new BeanOutputParser<>(ModelRecommendations.class);
-        Prompt prompt = new PromptTemplate(TEMPLATE).create(Map.of(
+        BeanOutputConverter<ModelRecommendations> converter = new BeanOutputConverter<>(ModelRecommendations.class);
+        Prompt prompt = PromptTemplate.builder().template(TEMPLATE).build().create(Map.of(
                 "limit", max,
                 "history", userMessages.stream().map(m -> "- " + m).collect(Collectors.joining("\n")),
                 "catalog", catalog.values().stream().map(RecommendationService::describe).collect(Collectors.joining("\n")),
-                "format", parser.getFormat()));
+                "format", converter.getFormat()));
 
-        String content = chatClient.call(prompt).getResult().getOutput().getContent();
+        String content = chatClient.prompt(prompt).call().content();
 
         ModelRecommendations parsed;
         try {
-            parsed = parser.parse(content);
+            parsed = converter.convert(content);
         } catch (RuntimeException e) {
             logger.warn("Could not parse recommendations from the model: {}", e.getMessage());
             return new BookRecommendations(List.of(), "El modelo devolvio una respuesta que no se pudo interpretar.");

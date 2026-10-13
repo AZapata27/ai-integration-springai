@@ -6,13 +6,13 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.Embedding;
-import org.springframework.ai.embedding.EmbeddingClient;
+import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.embedding.EmbeddingResponse;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -31,26 +31,26 @@ class EmbeddingControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
-    private EmbeddingClient embeddingClient;
-    @MockBean
+    @MockitoBean
+    private EmbeddingModel embeddingModel;
+    @MockitoBean
     private VectorStore vectorStore;
 
-    @MockBean
+    @MockitoBean
     private IAuthorService authorService;
-    @MockBean
+    @MockitoBean
     private IBookService bookService;
 
     @Test
     void generateEmbedsTheMessage() throws Exception {
-        when(embeddingClient.embedForResponse(List.of("hello")))
-                .thenReturn(new EmbeddingResponse(List.of(new Embedding(List.of(0.1, 0.2, 0.3), 0))));
+        when(embeddingModel.embedForResponse(List.of("hello")))
+                .thenReturn(new EmbeddingResponse(List.of(new Embedding(new float[]{0.1f, 0.2f, 0.3f}, 0))));
 
         mockMvc.perform(get("/embeddings/generate").param("message", "hello"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.embedding.results[0].output.length()").value(3));
 
-        verify(embeddingClient).embedForResponse(List.of("hello"));
+        verify(embeddingModel).embedForResponse(List.of("hello"));
     }
 
     @Test
@@ -62,7 +62,7 @@ class EmbeddingControllerTest {
         mockMvc.perform(get("/embeddings/vectorstore").param("message", "spring"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].content").value("Spring AI es lo maximo"));
+                .andExpect(jsonPath("$[0].text").value("Spring AI es lo maximo"));
 
         ArgumentCaptor<List<Document>> docs = ArgumentCaptor.forClass(List.class);
         verify(vectorStore).add(docs.capture());
