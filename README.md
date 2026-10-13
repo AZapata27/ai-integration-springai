@@ -1,5 +1,7 @@
 # AI Integration Spring Boot Backend
 
+[![CI](https://github.com/AZapata27/ai-integration-springai/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/AZapata27/ai-integration-springai/actions/workflows/ci.yml)
+
 A powerful Spring Boot backend for AI-powered applications that integrates various language models (LLMs), vector databases, and natural language processing capabilities.
 
 ## 🚀 Features
@@ -86,6 +88,49 @@ A powerful Spring Boot backend for AI-powered applications that integrates vario
 
 ### Transcript Controller
 - `POST /api/transcript/audio` - Convert audio to text
+
+## 🏗️ Architecture
+
+```mermaid
+flowchart LR
+    FE["Angular frontend<br/>(frontend/)"] --> API
+
+    subgraph API["Spring Boot REST controllers"]
+        CHAT["/chats<br/>ChatController"]
+        FN["/functions<br/>FunctionCallingController"]
+        EMB["/embeddings<br/>EmbeddingController"]
+        IMG["/images<br/>ImageController"]
+        TR["/transcripts<br/>TranscriptController"]
+        CRUD["/authors, /books<br/>Author/BookController"]
+    end
+
+    subgraph AI["Spring AI"]
+        CC["ChatClient<br/>(OpenAiChatClient)"]
+        EC["EmbeddingClient"]
+        IC["ImageClient"]
+        TC["AudioTranscriptionClient"]
+        FCB["Function callbacks<br/>WeatherInfo, BookInfo"]
+    end
+
+    CHAT --> CC
+    CHAT -.-> HIST["ChatHistory<br/>(in-memory)"]
+    FN --> CC
+    CC --> FCB
+    CC --> OPENAI["OpenAI<br/>GPT / DALL-E / Whisper"]
+    CC -. "optional starter" .-> OLLAMA["Ollama<br/>(local models)"]
+    IMG --> IC --> OPENAI
+    TR --> TC --> OPENAI
+
+    EMB --> EC --> OPENAI
+    EMB -- "documents" --> VS["Chroma vector store"]
+    EC -. "embeddings" .-> VS
+    VS -- "similarity search<br/>(retrieved context)" --> EMB
+
+    CRUD --> SVC["Author/Book services"] --> DB[("PostgreSQL<br/>(JPA)")]
+    FCB -- "BookInfo lookup" --> DB
+```
+
+Requests from the Angular client hit the REST controllers, which delegate to Spring AI clients. Chat and function-calling go through `ChatClient` (OpenAI by default; Ollama can be enabled via its starter), and the model may call the registered Java functions (`WeatherInfo`, `BookInfo`). For RAG, documents are embedded and stored in Chroma, and similarity search returns the most relevant context. Authors and books are persisted in PostgreSQL through Spring Data JPA; conversation history is kept in memory.
 
 ## 📁 Project Structure
 
