@@ -5,35 +5,45 @@ on:
     branches: [master]
   pull_request:
 
-permissions:
-  contents: read
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   backend:
     name: Backend (Maven verify)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
-          cache: maven
-      - name: Build and test
-        run: ./mvnw -B verify
+    uses: AZapata27/reusable-workflows/.github/workflows/java-maven.yml@dd1bf38000c4f44c4939abe2ce0da8e1fac11993 # v1.0.0
+    permissions:
+      contents: read
+    with:
+      java-version: '21'
+      maven-args: -B verify
 
   frontend:
     name: Frontend (Angular build)
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
-      - run: npm run build
+    uses: AZapata27/reusable-workflows/.github/workflows/node.yml@dd1bf38000c4f44c4939abe2ce0da8e1fac11993 # v1.0.0
+    permissions:
+      contents: read
+    with:
+      working-directory: frontend
+      node-version: '22'
+      run-command: npm run build
+
+  workflow-lint:
+    name: Workflow lint
+    uses: AZapata27/reusable-workflows/.github/workflows/workflow-lint.yml@dd1bf38000c4f44c4939abe2ce0da8e1fac11993 # v1.0.0
+    permissions:
+      contents: read
+
+  security:
+    name: Security
+    uses: AZapata27/reusable-workflows/.github/workflows/security.yml@dd1bf38000c4f44c4939abe2ce0da8e1fac11993 # v1.0.0
+    permissions:
+      contents: read
+      actions: read            # CodeQL (required even if CodeQL is disabled; see ADR 0003)
+      security-events: write   # CodeQL SARIF upload
+    with:
+      codeql-languages: '["java-kotlin", "javascript-typescript", "actions"]'
+      codeql-build-mode: none  # Java/Kotlin analysed without building
