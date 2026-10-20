@@ -16,7 +16,7 @@ concurrency:
 jobs:
   backend:
     name: Backend (Maven verify)
-    uses: AZapata27/reusable-workflows/.github/workflows/java-maven.yml@dd1bf38000c4f44c4939abe2ce0da8e1fac11993 # v1.0.0
+    uses: AZapata27/reusable-workflows/.github/workflows/java-maven.yml@1f72ba8c03929704ea446e9df6a80ceb23675d51 # v1.0.1
     permissions:
       contents: read
     with:
@@ -25,7 +25,7 @@ jobs:
 
   frontend:
     name: Frontend (Angular build)
-    uses: AZapata27/reusable-workflows/.github/workflows/node.yml@dd1bf38000c4f44c4939abe2ce0da8e1fac11993 # v1.0.0
+    uses: AZapata27/reusable-workflows/.github/workflows/node.yml@1f72ba8c03929704ea446e9df6a80ceb23675d51 # v1.0.1
     permissions:
       contents: read
     with:
@@ -35,13 +35,13 @@ jobs:
 
   workflow-lint:
     name: Workflow lint
-    uses: AZapata27/reusable-workflows/.github/workflows/workflow-lint.yml@dd1bf38000c4f44c4939abe2ce0da8e1fac11993 # v1.0.0
+    uses: AZapata27/reusable-workflows/.github/workflows/workflow-lint.yml@1f72ba8c03929704ea446e9df6a80ceb23675d51 # v1.0.1
     permissions:
       contents: read
 
   security:
     name: Security
-    uses: AZapata27/reusable-workflows/.github/workflows/security.yml@dd1bf38000c4f44c4939abe2ce0da8e1fac11993 # v1.0.0
+    uses: AZapata27/reusable-workflows/.github/workflows/security.yml@1f72ba8c03929704ea446e9df6a80ceb23675d51 # v1.0.1
     permissions:
       contents: read
       actions: read            # CodeQL (required even if CodeQL is disabled; see ADR 0003)
