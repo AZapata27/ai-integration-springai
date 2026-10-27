@@ -15,7 +15,7 @@ concurrency:
 jobs:
   release:
     name: Release
-    uses: AZapata27/reusable-workflows/.github/workflows/release.yml@dd1bf38000c4f44c4939abe2ce0da8e1fac11993 # v1.0.0
+    uses: AZapata27/reusable-workflows/.github/workflows/release.yml@1f72ba8c03929704ea446e9df6a80ceb23675d51 # v1.0.1
     # GitHub checks the permissions of every job in the called workflow against this ceiling
     # at start-up, including the provenance job that is skipped (no artifact-name passed).
     permissions:
